@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+
+import math
+import sys
+
+N = [0, 0, 0, 0]
+N1 = 0
+N2 = 0
+N3 = 0
+N4 = 0
+Po = 0
+Pw = 0
+Pc = 0
+Pb = 0
+Ps = 0
+prices = []
+prices_p = []
+pivot_y = 0
+pivot_x = 0
+M = [
+        [1, 0, 1, 0, 2],
+        [1, 2, 0, 1, 0],
+        [2, 1, 0, 1, 0],
+        [0, 0, 3, 1, 2],
+]
+MM = [
+        [1, 0, 1, 0, 2],
+        [1, 2, 0, 1, 0],
+        [2, 1, 0, 1, 0],
+        [0, 0, 3, 1, 2],
+]
+I = [[0 for i in range(4)] for j in range(4)]
+
+def help():
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "-h" or sys.argv[1] == "--help":
+            print("USAGE")
+            print("\t./307multigrains n1 n2 n3 n4 po pw pc pb ps\n")
+            print("DESCRIPTION")
+            print("\tn1\t\tnumber of tons of fertilizer F1")
+            print("\tn2\t\tnumber of tons of fertilizer F2")
+            print("\tn3\t\tnumber of tons of fertilizer F3")
+            print("\tn4\t\tnumber of tons of fertilizer F4")
+            print("\tpo\t\tprice of one unit of oat")
+            print("\tpw\t\tprice of one unit of wheat")
+            print("\tpc\t\tprice of one unit of corn")
+            print("\tpb\t\tprice of one unit of barley")
+            print("\tps\t\tprice of one unit of soy")
+            exit(0)
+    
+def rigor():
+    global N1
+    global N2
+    global N3
+    global N4
+    global Po
+    global Pw
+    global Pc
+    global Pb
+    global Ps
+    global prices
+    global prices_p
+    try:
+        N1 = float(sys.argv[1])
+        N2 = float(sys.argv[2])
+        N3 = float(sys.argv[3])
+        N4 = float(sys.argv[4])
+        Po = int(sys.argv[5])
+        Pw = int(sys.argv[6])
+        Pc = int(sys.argv[7])
+        Pb = int(sys.argv[8])
+        Ps = int(sys.argv[9])
+    except:
+        exit(84)
+    if len(sys.argv) > 10:
+        exit(84)
+    if N1 < 0 or N2 < 0 or N3 < 0 or N4 < 0:
+        exit(84)
+    if Po <= 0 or Pw <= 0 or Pc <= 0 or Pb <= 0 or Ps <= 0:
+       exit(84)
+    prices = [Po, Pw, Pc, Pb, Ps]
+    prices_p = [Po, Pw, Pc, Pb, Ps]
+
+
+def find_pivot_y(maxx, maxy):
+    global pivot_x
+    global pivot_y
+    m = 9999999
+    for i in range(0, maxy - 1):
+        if M[i][maxx - 1]:
+            if M[i][pivot_x] > 0:
+                if m > M[i][maxx - 1] / M[i][pivot_x] > 0:
+                    pivot_y = i
+                    m = M[i][maxx - 1] / M[i][pivot_x]
+        elif m > M[i][pivot_x] > 0:
+            pivot_y = i
+            m = M[i][maxx - 1] / M[i][pivot_x]
+
+def find_pivot_x():
+    global N
+    global pivot_x
+    global pivot_y
+    L = M[len(M) - 1][:5]
+    m = min(L)
+    if m >= 0:
+        return 0
+    else:
+        pivot_x = L.index(m)
+
+def getPivot():
+    global N
+    global pivot_x
+    global pivot_y
+    if find_pivot_x() == 0:
+        return 0
+    find_pivot_y(len(M[0]), len(M))
+    return 1
+
+
+def pivot():
+    global pivot_x
+    global pivot_y
+    p_value = M[pivot_y][pivot_x]
+    M[pivot_y] = list(map(lambda x: x / p_value, M[pivot_y]))
+    for i in range(0, len(M)):
+        if i == pivot_y:
+            continue
+        p = M[i][pivot_x]
+        for j in range(0, len(M[0])):
+            M[i][j] -= p * M[pivot_y][j]
+
+
+def gauss():
+    global pivot_x
+    global pivot_y
+    products = [-1] * 4
+    while 1:
+        if getPivot() == 0:
+            break
+        pivot()
+        products[pivot_y] = pivot_x
+    return units(products)
+
+
+def units(res):
+    dump = [0] * 5
+    for i in range(0, 4):
+        if res[i] != -1:
+            if M[i][-1] != 0:
+                dump[res[i]] = "{:.2f}".format(M[i][-1])
+            else:
+                dump[res[i]] = 0
+    return dump
+
+
+
+def print_result():
+    global N1
+    global N2
+    global N3
+    global N4
+    global Po
+    global Pw
+    global Pc
+    global Pb
+    global Ps
+    global prices
+    global prices_p
+    global N
+    lst = ["Oat", "Wheat", "Corn", "Barley", "Soy"]
+    print("Resources:", int(N1), "F1,", int(N2), "F2,", int(N3), "F3,", int(N4), "F4\n")
+    N = [N1, N2, N3, N4]
+    nbr = 0
+    j = 0
+    dump = gauss()
+    tot = 0
+    while j < 5:
+        print(f"{lst[j]:s}: {dump[j]} units at ${prices_p[j]:d}/unit")
+        tot += float(prices_p[j]) * float(dump[j])
+        j += 1
+    print("\nTotal production value: $%.2f" %tot)
+
+def create_identity_matrix():
+    i = 0
+    while i < 4:
+        I[i][i] = 1
+        i += 1
+
+
+def create_M():
+    global MM
+    global N1
+    global N2
+    global N3
+    global N4
+    global Po
+    global Pw
+    global Pc
+    global Pb
+    global Ps
+    global prices
+    N = [N1, N2, N3, N4]
+    for i in range(0, 5):
+        prices.append(0)
+        prices[i] = prices[i] * (-1)
+    M.append(prices)
+    MM.append(prices[:5])
+    create_identity_matrix()
+    for i in range(0, 4):
+        for j in I[i]:
+            M[i].append(j)
+        M[i].append(N[i])
+
+
+def grains():
+    rigor()
+    create_M()
+    print_result()
+
+def main():
+    help()
+    grains()
+
+if __name__ == "__main__":
+    main()
